@@ -78,14 +78,18 @@ button:hover{filter:brightness(.95);}
 /* ===== FORM OVERLAY ===== */
 #formOverlay{
   position:fixed;
-  inset:0;
+  top:0; left:0;
+  width:100vw;
+  height:100vh;
   background:white;
-  z-index:999;
+  z-index:99999;
   display:none;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   animation:fadeIn .4s ease;
+  overflow-y:auto;
+  padding:40px 0;
 }
 @keyframes fadeIn{
   from{opacity:0;transform:scale(0.98);}
@@ -114,7 +118,7 @@ input,textarea,select{
 }
 textarea{resize:vertical;min-height:80px;}
 .back-btn{
-  position:absolute;
+  position:fixed;
   top:20px;left:20px;
   background:transparent;
   border:none;
