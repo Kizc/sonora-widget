@@ -118,7 +118,7 @@ bookBtn.onclick = ()=>{
     nights: elNights.textContent,
     total: elTotal.textContent
   };
-  parent.postMessage(data, "*");
+  window.top.postMessage(data, "*");
 };
 </script>
 </body>

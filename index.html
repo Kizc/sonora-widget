@@ -19,12 +19,37 @@ body {
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
   max-width: 1200px;
   margin: auto;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Booking section layout */
+.booking-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.left {
+  flex: 2 1 60%;
+}
+.right {
+  flex: 1 1 35%;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+}
+
+@media(max-width: 900px) {
+  .booking-section {
+    flex-direction: column;
+  }
+  .right {
+    position: static;
+  }
 }
 
 iframe {
@@ -118,13 +143,17 @@ textarea {
 
 <div class="container">
   <!-- FOTO GALLERIJ -->
-  <iframe id="galleryFrame" src="gallery.html" height="480"></iframe>
+  <iframe id="galleryFrame" src="gallery.html" height="420"></iframe>
 
-  <!-- KALENDER -->
-  <iframe id="calendarFrame" src="calendar.html" height="580"></iframe>
-
-  <!-- SAMENVATTING -->
-  <iframe id="summaryFrame" src="summary.html" height="500"></iframe>
+  <!-- BOEKINGSSECTIE -->
+  <div class="booking-section">
+    <div class="left">
+      <iframe id="calendarFrame" src="calendar.html" height="650"></iframe>
+    </div>
+    <div class="right">
+      <iframe id="summaryFrame" src="summary.html" height="500"></iframe>
+    </div>
+  </div>
 </div>
 
 <!-- FULLSCREEN FORM -->
