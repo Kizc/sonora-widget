@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soñora Samenvatting</title>
+<style>
+:root{
+  --bg:#FBF5E9;
+  --accent:#F3814B;
+  --text:#122F4D;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  padding:20px;
+}
+
+/* CARD */
+.summary{
+  background:white;
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  overflow:hidden;
+  max-width:400px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+}
+.sum-head{
+  background:#122F4D;
+  color:white;
+  padding:20px;
+}
+.sum-head h3{
+  margin:0;
+  font-size:1.3rem;
+}
+.sum-body{
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.line{
+  display:flex;
+  justify-content:space-between;
+}
+.total{
+  font-weight:700;
+  font-size:1.1rem;
+  border-top:1px solid #eee;
+  padding-top:10px;
+}
+button{
+  margin-top:20px;
+  background:var(--accent);
+  border:none;
+  border-radius:8px;
+  color:white;
+  font-weight:600;
+  padding:12px;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{filter:brightness(.95);}
+.footer{
+  text-align:center;
+  font-size:.85rem;
+  color:#666;
+  padding:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="summary">
+  <div class="sum-head">
+    <h3>Jouw verblijf bij Soñora</h3>
+    <p style="margin:4px 0 0;opacity:0.9;">Boek direct je zonnige ontsnapping 🌴</p>
+  </div>
+  <div class="sum-body" id="summaryBody">
+    <div class="line"><span>Check-in</span><span id="in">-</span></div>
+    <div class="line"><span>Check-out</span><span id="out">-</span></div>
+    <div class="line"><span>Aantal nachten</span><span id="nights">0</span></div>
+    <div class="line"><span>Prijs per nacht</span><span>€75</span></div>
+    <div class="line"><span>Schoonmaakkosten</span><span>€90</span></div>
+    <div class="line"><span>Toeristenbelasting</span><span>€31,50</span></div>
+    <div class="line total"><span>Totaal</span><span id="total">€0</span></div>
+    <button onclick="window.location.href='#'">Boek nu</button>
+  </div>
+  <div class="footer">
+    Geen aanbetaling nodig. Gratis annuleren tot 30 dagen voor aankomst.
+  </div>
+</div>
+
+<script>
+const elIn = document.getElementById("in");
+const elOut = document.getElementById("out");
+const elNights = document.getElementById("nights");
+const elTotal = document.getElementById("total");
+
+window.addEventListener("message", (event)=>{
+  if(event.data.type === "updateSummary"){
+    elIn.textContent = event.data.checkIn || "-";
+    elOut.textContent = event.data.checkOut || "-";
+    elNights.textContent = event.data.nights || 0;
+    elTotal.textContent = "€ " + event.data.total.toFixed(2);
+  }
+});
+</script>
+</body>
+</html>
