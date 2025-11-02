@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soñora Curaçao – Boek je verblijf</title>
+<style>
+:root{
+  --bg:#FBF5E9;
+  --accent:#F3814B;
+  --text:#122F4D;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+}
+.wrapper{
+  max-width:1200px;
+  margin:0 auto;
+  padding:20px;
+}
+.photo-collage{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:10px;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+  cursor:pointer;
+}
+.photo-collage .cell:first-child{
+  grid-row:1/3;
+  grid-column:1/2;
+  aspect-ratio:4/3;
+}
+.photo-collage .cell:not(:first-child){aspect-ratio:1/1;}
+.photo-collage img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .25s ease;
+}
+.photo-collage img:hover{transform:scale(1.03)}
+
+.grid{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:24px;
+  margin-top:40px;
+}
+iframe{
+  width:100%;
+  border:none;
+  border-radius:12px;
+  background:white;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr;}
+}
+
+/* LIGHTBOX */
+.lightbox{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  align-items:center; justify-content:center; flex-direction:column;
+  z-index:9999;
+}
+.lightbox.open{display:flex}
+.lb-stage{position:relative;width:min(92vw,1100px);max-height:78vh;display:flex;justify-content:center}
+.lb-img{max-width:100%;max-height:78vh;border-radius:12px;box-shadow:0 0 24px rgba(0,0,0,.5);opacity:0;transition:opacity .25s}
+.lb-img.show{opacity:1}
+.lb-arrow{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:grid;place-items:center;font-size:26px;cursor:pointer}
+.lb-prev{left:-58px}.lb-next{right:-58px}
+.lb-close{position:absolute;top:-48px;right:0;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:grid;place-items:center;cursor:pointer}
+.lb-counter{color:#fff;opacity:.85;margin-top:10px}
+.lb-thumbs{margin-top:12px;width:min(95vw,1200px);display:flex;gap:8px;overflow-x:auto;padding:6px}
+.lb-thumb{flex:0 0 auto;width:110px;height:78px;border-radius:10px;overflow:hidden;cursor:pointer;outline:2px solid transparent}
+.lb-thumb.active{outline:2px solid var(--accent)}
+.lb-thumb img{width:100%;height:100%;object-fit:cover}
+@media(max-width:900px){.lb-prev{left:8px}.lb-next{right:8px}.lb-close{top:8px;right:8px}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- FOTO COLLAGE -->
+  <div class="photo-collage" id="collage"></div>
+
+  <!-- GRID -->
+  <div class="grid">
+    <iframe id="calendarFrame" src="calendar.html" height="800"></iframe>
+    <iframe id="summaryFrame" src="summary.html" height="600"></iframe>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-stage">
+    <div class="lb-arrow lb-prev" id="lbPrev">&#10094;</div>
+    <img id="lbImg" class="lb-img" src="" alt="Foto" />
+    <div class="lb-arrow lb-next" id="lbNext">&#10095;</div>
+    <div class="lb-close" id="lbClose">✕</div>
+  </div>
+  <div class="lb-counter" id="lbCounter">1 / 26</div>
+  <div class="lb-thumbs" id="lbStrip"></div>
+</div>
+
+<script>
+/* ---------------- FOTO’S ---------------- */
+const PHOTOS = [
+"https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-bee89974.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-0f1c08b5.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-00f6f222.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-fe98ab23.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-6d684c5f.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-12945435.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-8edf69d8.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-960a9f20.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-20c3d686.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-ed6dd728.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c1052fd7.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-73c76588.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-ead4ca50.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-96f96634.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-289c1a0a.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-16b862c9.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c88c1625.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-6cba3773.JPG",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-2c9511c3.JPG",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-75d88fdf.jpg",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-e0cf1958.jpg"
+];
+
+/* ---- Maak collage ---- */
+const collage = document.getElementById("collage");
+PHOTOS.slice(0,5).forEach(url=>{
+  const div=document.createElement('div');div.className='cell';
+  const img=document.createElement('img');img.src=url;
+  div.appendChild(img);collage.appendChild(div);
+});
+collage.onclick=()=>openLB(0);
+
+/* ---- Lightbox functionaliteit ---- */
+const lb=document.getElementById('lightbox');
+const lbImg=document.getElementById('lbImg');
+const lbPrev=document.getElementById('lbPrev');
+const lbNext=document.getElementById('lbNext');
+const lbClose=document.getElementById('lbClose');
+const lbCounter=document.getElementById('lbCounter');
+const lbStrip=document.getElementById('lbStrip');
+let cur=0;
+
+PHOTOS.forEach((url,idx)=>{
+  const t=document.createElement('div');
+  t.className='lb-thumb';
+  const im=document.createElement('img');
+  im.src=url;
+  t.appendChild(im);
+  t.onclick=()=>show(idx);
+  lbStrip.appendChild(t);
+});
+function openLB(i=0){cur=i;lb.classList.add('open');show(cur);}
+function closeLB(){lb.classList.remove('open');}
+function show(i){
+  cur=(i+PHOTOS.length)%PHOTOS.length;
+  lbImg.classList.remove('show');lbImg.src=PHOTOS[cur];
+  requestAnimationFrame(()=>lbImg.classList.add('show'));
+  lbCounter.textContent=`${cur+1} / ${PHOTOS.length}`;
+  [...lbStrip.children].forEach((c,ix)=>c.classList.toggle('active',ix===cur));
+  ensureThumbVisible();
+}
+function ensureThumbVisible(){
+  const el=lbStrip.children[cur];if(!el)return;
+  const L=el.offsetLeft,R=L+el.offsetWidth;
+  if(L<lbStrip.scrollLeft)lbStrip.scrollLeft=L-8;
+  else if(R>lbStrip.scrollLeft+lbStrip.clientWidth)lbStrip.scrollLeft=R-lbStrip.clientWidth+8;
+}
+lbPrev.onclick=()=>show(cur-1);
+lbNext.onclick=()=>show(cur+1);
+lbClose.onclick=closeLB;
+lb.addEventListener('click',e=>{if(e.target===lb)closeLB();});
+window.addEventListener('keydown',e=>{
+  if(!lb.classList.contains('open'))return;
+  if(e.key==='Escape')closeLB();
+  if(e.key==='ArrowRight')show(cur+1);
+  if(e.key==='ArrowLeft')show(cur-1);
+});
+
+/* ---------- Communicatie tussen frames ---------- */
+const calendarFrame=document.getElementById("calendarFrame");
+const summaryFrame=document.getElementById("summaryFrame");
+window.addEventListener("message",(event)=>{
+  if(event.data.type==="updateSummary"){
+    summaryFrame.contentWindow.postMessage(event.data,"*");
+  }
+});
+</script>
+</body>
+</html>
