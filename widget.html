@@ -3,171 +3,226 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Soñora – Fotogalerij</title>
+<title>Soñora – Prijzen & reserveren</title>
 <style>
-  :root{
-    --bg:#FBF5E9;
-    --radius:16px;
-    --thumb-radius:10px;
-    --accent:#F3814B;
-  }
-  body{
-    margin:0;
-    background:var(--bg);
-    font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    color:#122F4D;
-    display:flex;
-    justify-content:center;
-    padding:24px;
-  }
+:root{
+  --bg:#FBF5E9;
+  --accent:#F3814B;
+  --text:#122F4D;
+  --card:#fff;
+  --muted:#6b7b8a;
+  --ok:#cfeeda;
+  --range:#ffe2cc;
+  --disabled:#f7b4b4;
+  --radius:12px;
+}
 
-  /* Collage: 1 groot links, 4 klein rechts (2x2) */
-  .photo-collage{
-    width:100%;
-    max-width:1200px;
-    display:grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap:10px;
-    border-radius:var(--radius);
-    overflow:hidden;
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-  }
-  .photo-collage .cell{
-    position:relative;
-    overflow:hidden;
-    background:#ddd;
-    cursor:pointer;
-  }
-  /* grote linker */
-  .photo-collage .cell:first-child{
-    grid-row:1 / 3;
-    grid-column:1 / 2;
-    aspect-ratio: 4 / 3;
-  }
-  /* kleine rechts */
-  .photo-collage .cell:not(:first-child){ aspect-ratio: 1 / 1; }
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
 
-  .photo-collage img{
-    width:100%; height:100%;
-    object-fit:cover;
-    transition:transform .25s ease;
-    display:block;
-  }
-  .photo-collage img:hover{ transform:scale(1.03); }
+/* LAYOUT */
+.wrapper{max-width:1200px;margin:0 auto;padding:20px;}
+.grid{
+  display:grid; gap:24px;
+  grid-template-columns: 1fr 360px;
+}
+@media (max-width: 980px){
+  .grid{grid-template-columns: 1fr;}
+}
 
-  /* Lightbox */
-  .lightbox{
-    position:fixed; inset:0;
-    background:rgba(0,0,0,.85);
-    display:none; /* toggled to flex */
-    flex-direction:column;
-    justify-content:center; align-items:center;
-    z-index:9999;
-  }
-  .lightbox.open{ display:flex; }
+/* ----------------- FOTO COLLAGE ----------------- */
+.collage{
+  grid-column: 1 / -1;
+  display:grid; gap:10px;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  border-radius:16px; overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+}
+.collage .cell{position:relative;overflow:hidden;cursor:pointer}
+.collage .cell:first-child{grid-row:1/3;grid-column:1/2; aspect-ratio:4/3;}
+.collage .cell:not(:first-child){aspect-ratio:1/1;}
+.collage img{width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.collage img:hover{transform:scale(1.03)}
 
-  .lb-stage{
-    position:relative;
-    width:min(92vw,1100px);
-    max-height:78vh;
-    display:flex; justify-content:center; align-items:center;
-  }
-  .lb-img{
-    max-width:100%;
-    max-height:78vh;
-    border-radius:12px;
-    box-shadow:0 0 24px rgba(0,0,0,.5);
-    opacity:0; transition:opacity .25s ease;
-  }
-  .lb-img.show{ opacity:1; }
+/* ----------------- KALENDER ----------------- */
+.section-title{font-size:22px;font-weight:700;margin:26px 0 10px}
+.section-sub{color:var(--muted);margin-bottom:18px}
 
-  .lb-close{
-    position:absolute; top:-48px; right:0;
-    width:36px; height:36px; border-radius:50%;
-    background:rgba(255,255,255,.2);
-    color:#fff; display:grid; place-items:center;
-    font-size:22px; cursor:pointer;
-    backdrop-filter: blur(2px);
-  }
-  .lb-close:hover{ background:rgba(255,255,255,.35); }
+.cal-card{
+  background:var(--card); border-radius:var(--radius);
+  box-shadow:0 2px 8px rgba(0,0,0,.06); padding:18px;
+}
+.cal-header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;
+}
+.cal-nav{
+  display:flex; gap:8px;
+}
+.btn{
+  border:none; background:var(--accent); color:#fff; padding:8px 12px;
+  border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,.1);
+}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.months{
+  display:grid; gap:22px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 720px){ .months{grid-template-columns:1fr;} }
 
-  .lb-arrow{
-    position:absolute; top:50%; transform:translateY(-50%);
-    width:44px; height:44px; border-radius:50%;
-    background:rgba(255,255,255,.2);
-    color:#fff; display:grid; place-items:center;
-    font-size:26px; cursor:pointer; user-select:none;
-  }
-  .lb-arrow:hover{ background:rgba(255,255,255,.35); }
-  .lb-prev{ left:-58px; }
-  .lb-next{ right:-58px; }
+.month h4{margin:8px 0 10px;color:var(--accent)}
+.grid-7{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center;
+}
+.dow{font-weight:600;color:#95a3ad;font-size:.9rem}
+.day{
+  background:#fff7eb; border-radius:8px; padding:10px 0; cursor:pointer;
+  user-select:none;
+}
+.day.empty{background:transparent;cursor:default}
+.day.booked{background:var(--disabled)!important;color:#8a0000!important;cursor:not-allowed}
+.day.in-range{background:var(--range)}
+.day.selected{background:var(--accent)!important;color:#fff!important}
+.day.ok{background:var(--ok)}
+.hint{margin-top:8px;color:var(--muted);font-size:.9rem}
+.clear-chip{
+  display:inline-flex; gap:6px; align-items:center; background:#0b5fff; color:#fff;
+  border-radius:20px; padding:6px 10px; font-weight:600; cursor:pointer;
+}
 
-  /* Teller */
-  .lb-counter{
-    margin-top:10px; color:#fff; opacity:.85; font-size:14px;
-  }
+/* ----------------- SUMMARY ----------------- */
+.summary{
+  position:sticky; top:20px;
+  background:var(--card); border-radius:16px; overflow:hidden;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+.sum-head{
+  background:#0f1a27; color:#fff; padding:18px;
+}
+.sum-price{font-size:34px; font-weight:800; letter-spacing:.5px}
+.pernacht{opacity:.85; font-size:14px; margin-left:6px}
+.sum-body{padding:18px}
+.row{display:flex; justify-content:space-between; align-items:center; padding:8px 0}
+.hr{height:1px;background:#ececec;margin:8px 0}
+.dim{color:#667583; font-size:.95rem}
 
-  /* Thumbnails-strip */
-  .lb-thumbs{
-    margin-top:14px;
-    width:min(95vw,1200px);
-    display:flex; gap:8px; overflow-x:auto; padding:6px;
-    scrollbar-width:thin;
-  }
-  .lb-thumbs::-webkit-scrollbar{ height:8px; }
-  .lb-thumbs::-webkit-scrollbar-thumb{ background:#777; border-radius:8px; }
+.cta{
+  display:block; width:100%; background:#ff7f5a; color:#fff;
+  border:none; border-radius:10px; padding:14px; font-weight:800; cursor:pointer;
+  margin-top:14px; font-size:16px;
+}
+.cta:hover{filter:brightness(.96)}
 
-  .lb-thumb{
-    flex:0 0 auto;
-    width:110px; height:78px; border-radius:var(--thumb-radius);
-    overflow:hidden; cursor:pointer; position:relative;
-    outline:2px solid transparent;
-  }
-  .lb-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .lb-thumb.active{ outline:2px solid var(--accent); }
-  .lb-thumb::after{
-    content:""; position:absolute; inset:0; border-radius:var(--thumb-radius);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
-    pointer-events:none;
-  }
-
-  /* Responsief pijlen dichterbij op small screens */
-  @media (max-width: 900px){
-    .lb-prev{ left:8px; } .lb-next{ right:8px; }
-    .lb-close{ top:8px; right:8px; }
-    .lb-stage{ width:96vw; }
-  }
+/* --------------- LIGHTBOX (van eerder) --------------- */
+.lightbox{position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; z-index:9999;
+  align-items:center; justify-content:center; flex-direction:column}
+.lightbox.open{display:flex}
+.lb-stage{position:relative; width:min(92vw,1100px); max-height:78vh; display:flex;justify-content:center}
+.lb-img{max-width:100%; max-height:78vh; border-radius:12px; box-shadow:0 0 24px rgba(0,0,0,.5); opacity:0; transition:opacity .25s}
+.lb-img.show{opacity:1}
+.lb-arrow{position:absolute; top:50%; transform:translateY(-50%); width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.2); color:#fff; display:grid; place-items:center; font-size:26px; cursor:pointer}
+.lb-prev{left:-58px} .lb-next{right:-58px}
+.lb-close{position:absolute; top:-48px; right:0; width:36px;height:36px;border-radius:50%; background:rgba(255,255,255,.2); color:#fff;
+  display:grid;place-items:center;cursor:pointer}
+.lb-counter{color:#fff;opacity:.85;margin-top:10px}
+.lb-thumbs{margin-top:12px; width:min(95vw,1200px); display:flex; gap:8px; overflow-x:auto; padding:6px}
+.lb-thumb{flex:0 0 auto; width:110px;height:78px;border-radius:10px; overflow:hidden; cursor:pointer; outline:2px solid transparent}
+.lb-thumb.active{outline:2px solid var(--accent)}
+.lb-thumb img{width:100%;height:100%;object-fit:cover}
+@media(max-width:900px){ .lb-prev{left:8px}.lb-next{right:8px}.lb-close{top:8px;right:8px} }
 </style>
 </head>
 <body>
+<div class="wrapper">
+  <!-- FOTO COLLAGE -->
+  <div class="collage" id="collage">
+    <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg" alt=""></div>
+    <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg" alt=""></div>
+    <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg" alt=""></div>
+    <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg" alt=""></div>
+    <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg" alt=""></div>
+  </div>
 
-<!-- Collage (klik opent lightbox) -->
-<div class="photo-collage" id="collage">
-  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg" alt=""></div>
-  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg" alt=""></div>
-  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg" alt=""></div>
-  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg" alt=""></div>
-  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg" alt=""></div>
+  <div class="grid">
+    <!-- LINKERKOLOM: KALENDER -->
+    <div>
+      <div class="section-title">Prijzen & reserveren</div>
+      <div class="section-sub">Nu nog géén betaling nodig, pas als de verhuurder je reservering accepteert.</div>
+
+      <div class="cal-card">
+        <div class="cal-header">
+          <div id="monthRange" style="font-weight:700;"></div>
+          <div class="cal-nav">
+            <button class="btn" id="prevBtn">Vorige</button>
+            <button class="btn" id="nextBtn">Volgende</button>
+          </div>
+        </div>
+
+        <div class="months" id="months"></div>
+
+        <div class="hint" id="hint">
+          Minimaal verblijf: <b>5 nachten</b>. Kies eerst aankomst, daarna vertrek.
+          <span id="clear" class="clear-chip" style="display:none;">Wissen ✕</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: SUMMARY -->
+    <aside class="summary" id="summary">
+      <div class="sum-head">
+        <span class="sum-price">€ 75,–</span><span class="pernacht">per nacht</span>
+      </div>
+      <div class="sum-body">
+        <div class="row">
+          <div>
+            <div style="font-weight:700">Aankomst</div>
+            <div class="dim" id="sumCheckIn">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">Vertrek</div>
+            <div class="dim" id="sumCheckOut">—</div>
+          </div>
+        </div>
+        <div class="hr"></div>
+
+        <div class="row"><div>Prijs vakantiehuis</div></div>
+        <div class="row"><div class="dim">Basisprijs</div><div id="sumBase">€ 0,00</div></div>
+
+        <div class="row"><div>Extra's</div></div>
+        <div class="row"><div class="dim">Eindschoonmaak</div><div>€ 90,00</div></div>
+        <div class="row"><div class="dim">Toeristenbelasting alle leeftijden</div><div>€ 31,50</div></div>
+
+        <div class="hr"></div>
+        <div class="row" style="font-weight:800"><div>Totaal:</div><div id="sumTotal">€ 0,00</div></div>
+        <div class="row dim"><div>+ Borgsom</div><div>€ 275,00</div></div>
+
+        <button class="cta" id="ctaBtn">Start je reservering</button>
+      </div>
+    </aside>
+  </div>
 </div>
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox" aria-modal="true" role="dialog">
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
   <div class="lb-stage">
-    <div class="lb-arrow lb-prev" id="prev" aria-label="Vorige">&#10094;</div>
-    <img id="lbImg" class="lb-img" src="" alt="Soñora foto" />
-    <div class="lb-arrow lb-next" id="next" aria-label="Volgende">&#10095;</div>
-    <div class="lb-close" id="close" aria-label="Sluiten">✕</div>
+    <div class="lb-arrow lb-prev" id="lbPrev">&#10094;</div>
+    <img id="lbImg" class="lb-img" src="" alt="Foto" />
+    <div class="lb-arrow lb-next" id="lbNext">&#10095;</div>
+    <div class="lb-close" id="lbClose">✕</div>
   </div>
-  <div class="lb-counter" id="counter">1 / 26</div>
-  <div class="lb-thumbs" id="thumbStrip"></div>
+  <div class="lb-counter" id="lbCounter">1 / 26</div>
+  <div class="lb-thumbs" id="lbStrip"></div>
 </div>
 
 <script>
-  // ====== Alle 26 foto's (zoals je eerder stuurde) ======
-  const PHOTOS = [
-"https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg?crop=107,0,1814,1280&srotate=0&width=800&height=600&mode=crop&scale=both",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg?crop=145,0,1774,1222&srotate=0&width=800&height=600&mode=crop&scale=both",
+/* ----------------- FOTO'S + LIGHTBOX ----------------- */
+const PHOTOS = [
+"https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg?crop=145,0,1774,1222&srotate=0&width=1600&height=1200&mode=crop",
 "https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
 "https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
 "https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
@@ -192,87 +247,246 @@
 "https://images.micazu.nl/_images/house/52870/images/Sonora-2c9511c3.JPG?crop=0,0,1920,1440&srotate=0&width=1600&height=1200&mode=crop",
 "https://images.micazu.nl/_images/house/52870/images/Sonora-75d88fdf.jpg?&width=1600&height=1200&mode=crop",
 "https://images.micazu.nl/_images/house/52870/images/Sonora-e0cf1958.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop"
-  ];
+];
 
-  // Collage: klik opent LB op die index
-  const collage = document.getElementById('collage');
-  collage.querySelectorAll('img').forEach((img, i) => {
-    img.addEventListener('click', () => openLightbox(i));
+const collage = document.getElementById('collage');
+collage.querySelectorAll('img').forEach((img,i)=>img.addEventListener('click',()=>openLB(i)));
+
+const lb = document.getElementById('lightbox');
+const lbImg = document.getElementById('lbImg');
+const lbPrev = document.getElementById('lbPrev');
+const lbNext = document.getElementById('lbNext');
+const lbClose = document.getElementById('lbClose');
+const lbCounter = document.getElementById('lbCounter');
+const lbStrip = document.getElementById('lbStrip');
+let cur = 0;
+
+PHOTOS.forEach((url,idx)=>{
+  const t=document.createElement('div'); t.className='lb-thumb';
+  const im=document.createElement('img'); im.src=url; t.appendChild(im);
+  t.onclick=()=>show(idx);
+  lbStrip.appendChild(t);
+});
+function openLB(i=0){ cur=i; lb.classList.add('open'); show(cur); }
+function closeLB(){ lb.classList.remove('open'); }
+function show(i){
+  cur=(i+PHOTOS.length)%PHOTOS.length;
+  lbImg.classList.remove('show'); lbImg.src=PHOTOS[cur];
+  requestAnimationFrame(()=>lbImg.classList.add('show'));
+  lbCounter.textContent=`${cur+1} / ${PHOTOS.length}`;
+  [...lbStrip.children].forEach((c,ix)=>c.classList.toggle('active',ix===cur));
+  ensureThumbVisible();
+}
+function ensureThumbVisible(){
+  const el=lbStrip.children[cur]; if(!el) return;
+  const L=el.offsetLeft, R=L+el.offsetWidth;
+  if(L<lbStrip.scrollLeft) lbStrip.scrollLeft=L-8;
+  else if(R>lbStrip.scrollLeft+lbStrip.clientWidth) lbStrip.scrollLeft=R-lbStrip.clientWidth+8;
+}
+lbPrev.onclick=()=>show(cur-1);
+lbNext.onclick=()=>show(cur+1);
+lbClose.onclick=closeLB;
+lb.addEventListener('click',e=>{ if(e.target===lb) closeLB(); });
+window.addEventListener('keydown',e=>{
+  if(!lb.classList.contains('open')) return;
+  if(e.key==='Escape') closeLB();
+  if(e.key==='ArrowRight') show(cur+1);
+  if(e.key==='ArrowLeft') show(cur-1);
+});
+
+/* ----------------- KALENDER + SUMMARY ----------------- */
+const NIGHT_PRICE = 75;
+const CLEANING = 90;
+const TOURIST_TAX = 31.50;
+const DEPOSIT = 275;
+const MIN_NIGHTS = 5;
+
+/* Blokkeer 22 t/m 31 dec 2025 */
+const blocked = [];
+for(let d=22; d<=31; d++){ blocked.push(`2025-12-${String(d).padStart(2,'0')}`); }
+
+const monthsWrap = document.getElementById('months');
+const monthRange = document.getElementById('monthRange');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const clearBtn = document.getElementById('clear');
+
+let baseMonth = new Date(2025,10,1); // november 2025 (0-based)
+let checkIn=null, checkOut=null;
+
+prevBtn.onclick=()=>{ baseMonth.setMonth(baseMonth.getMonth()-1); renderMonths(); };
+nextBtn.onclick=()=>{ baseMonth.setMonth(baseMonth.getMonth()+1); renderMonths(); };
+clearBtn.onclick=()=>clearSelection();
+
+function renderMonths(){
+  monthsWrap.innerHTML='';
+  const m1 = new Date(baseMonth.getFullYear(), baseMonth.getMonth(), 1);
+  const m2 = new Date(baseMonth.getFullYear(), baseMonth.getMonth()+1, 1);
+  const names = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+  monthRange.textContent = `${names[m1.getMonth()]} ${m1.getFullYear()}  –  ${names[m2.getMonth()]} ${m2.getFullYear()}`;
+
+  [m1,m2].forEach(m=>monthsWrap.appendChild(renderMonth(m)));
+  paintRange();
+  updateSummary();
+}
+function renderMonth(first){
+  const year=first.getFullYear(), month=first.getMonth();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const firstDow=(new Date(year,month,1).getDay()+6)%7; // 0=ma,6=zo
+
+  const wrap=document.createElement('div'); wrap.className='month';
+  const title=document.createElement('h4');
+  const names=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+  title.textContent = `${names[month]} ${year}`; wrap.appendChild(title);
+
+  const g=document.createElement('div'); g.className='grid-7';
+  ["ma","di","wo","do","vr","za","zo"].forEach(d=>{ const el=document.createElement('div'); el.className='dow'; el.textContent=d; g.appendChild(el); });
+
+  for(let i=0;i<firstDow;i++){ const e=document.createElement('div'); e.className='day empty'; g.appendChild(e); }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el=document.createElement('div'); el.className='day'; el.textContent=d;
+
+    if(blocked.includes(ds)){ el.classList.add('booked'); }
+    el.onclick=()=>onPick(ds, el.classList.contains('booked'));
+    g.appendChild(el);
+  }
+  wrap.appendChild(g);
+  return wrap;
+}
+function onPick(dateStr,isBlocked){
+  if(isBlocked) return;
+  const d=new Date(dateStr);
+  if(!checkIn || (checkIn && checkOut)){ // start nieuwe selectie
+    checkIn=d; checkOut=null; clearVisual();
+    markDay(dateStr,'selected');
+    document.getElementById('hint').innerHTML = `Gekozen aankomst: <b>${fmt(d)}</b>. Kies je vertrekdatum. <span id="clear" class="clear-chip">Wissen ✕</span>`;
+    document.getElementById('clear').onclick=()=>clearSelection();
+  }else if(d>checkIn){
+    const nights = diffNights(checkIn,d);
+    if(nights < MIN_NIGHTS){
+      alert(`Minimum verblijf is ${MIN_NIGHTS} nachten.`);
+      return;
+    }
+    if(rangeOK(checkIn,d)){
+      checkOut=d; paintRange(); updateSummary();
+      document.getElementById('hint').innerHTML = `Van <b>${fmt(checkIn)}</b> tot <b>${fmt(checkOut)}</b> (${nights} nachten). <span id="clear" class="clear-chip">Wissen ✕</span>`;
+      document.getElementById('clear').onclick=()=>clearSelection();
+    }else{
+      alert('De geselecteerde periode bevat bezette dagen.');
+    }
+  }
+}
+function markDay(ds, cls){
+  document.querySelectorAll('.months .day').forEach(node=>{
+    if(node.classList.contains('empty')) return;
+    const parent = node.closest('.month');
+    const title = parent.querySelector('h4').textContent;
+    // reconstruct date of node
   });
+  // Simpler: repaint all; find by date math
+  paintRange();
+}
 
-  // Lightbox elements
-  const lb = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lbImg');
-  const prev = document.getElementById('prev');
-  const next = document.getElementById('next');
-  const closeBtn = document.getElementById('close');
-  const counter = document.getElementById('counter');
-  const strip = document.getElementById('thumbStrip');
+function clearVisual(){
+  document.querySelectorAll('.day').forEach(d=>d.classList.remove('selected','in-range','ok'));
+}
+function paintRange(){
+  clearVisual();
+  // repaint blocked class stays
+  // mark selected + range between
+  if(!checkIn){ updateSummary(); return; }
 
-  let current = 0;
+  const start = new Date(checkIn);
+  const end = checkOut ? new Date(checkOut) : null;
 
-  // Build thumbnails
-  PHOTOS.forEach((url, idx) => {
-    const t = document.createElement('div');
-    t.className = 'lb-thumb';
-    const im = document.createElement('img');
-    im.src = url;
-    im.alt = 'thumb '+(idx+1);
-    t.appendChild(im);
-    t.addEventListener('click', () => show(idx));
-    strip.appendChild(t);
-  });
+  // Iterate visible months days
+  const months = document.querySelectorAll('.month');
+  months.forEach(monthDiv=>{
+    const title = monthDiv.querySelector('h4').textContent.split(' ');
+    const names=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+    const monthIdx = names.indexOf(title[0]);
+    const year = parseInt(title[1],10);
+    const cells = monthDiv.querySelectorAll('.day:not(.empty)');
+    cells.forEach((cell,i)=>{
+      const day = i - 0; // index within month
+      const dateStr = `${year}-${String(monthIdx+1).padStart(2,'0')}-${String(parseInt(cell.textContent)).padStart(2,'0')}`;
+      const dt = new Date(dateStr);
 
-  function openLightbox(startIndex=0){
-    current = startIndex;
-    lb.classList.add('open');
-    show(current);
-  }
-  function closeLightbox(){
-    lb.classList.remove('open');
-  }
-
-  function show(i){
-    current = (i + PHOTOS.length) % PHOTOS.length;
-    lbImg.classList.remove('show');
-    lbImg.src = PHOTOS[current];
-    // wait a tick to fade in
-    requestAnimationFrame(()=>lbImg.classList.add('show'));
-    counter.textContent = (current+1) + ' / ' + PHOTOS.length;
-    updateActiveThumb();
-    ensureThumbInView();
-  }
-
-  function updateActiveThumb(){
-    [...strip.children].forEach((el, idx)=>{
-      el.classList.toggle('active', idx === current);
+      if(sameDate(dt,start)) cell.classList.add('selected');
+      if(end && dt>start && dt<end) cell.classList.add('in-range');
+      if(end && sameDate(dt,end)) cell.classList.add('selected');
+      if(!cell.classList.contains('booked') && !end) cell.classList.add('ok'); // nog te kiezen
     });
-  }
-  function ensureThumbInView(){
-    const el = strip.children[current];
-    if(!el) return;
-    const elLeft = el.offsetLeft;
-    const elRight = elLeft + el.offsetWidth;
-    if(elLeft < strip.scrollLeft) strip.scrollLeft = elLeft - 8;
-    else if(elRight > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = elRight - strip.clientWidth + 8;
-  }
-
-  prev.addEventListener('click', ()=>show(current-1));
-  next.addEventListener('click', ()=>show(current+1));
-  closeBtn.addEventListener('click', closeLightbox);
-
-  // sluit bij klik op donkere achtergrond (maar niet op de foto/knoppen)
-  lb.addEventListener('click', (e)=>{
-    if(e.target === lb) closeLightbox();
   });
+}
+function rangeOK(a,b){
+  // check geen blocked datum in [a, b)
+  const cur = new Date(a);
+  while(cur < b){
+    const ds = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+    if(blocked.includes(ds)) return false;
+    cur.setDate(cur.getDate()+1);
+  }
+  return true;
+}
+function diffNights(a,b){ return Math.round((b - a) / (1000*60*60*24)); }
+function sameDate(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+function fmt(d){
+  const dows=['zo','ma','di','wo','do','vr','za'];
+  const mos=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  return `${dows[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}-${mos[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+}
 
-  // keyboard controls
-  window.addEventListener('keydown', (e)=>{
-    if(!lb.classList.contains('open')) return;
-    if(e.key === 'Escape') closeLightbox();
-    if(e.key === 'ArrowRight') show(current+1);
-    if(e.key === 'ArrowLeft') show(current-1);
-  });
+function clearSelection(){
+  checkIn=null; checkOut=null; paintRange();
+  document.getElementById('hint').innerHTML =
+    `Minimaal verblijf: <b>${MIN_NIGHTS} nachten</b>. Kies eerst aankomst, daarna vertrek.`;
+}
+
+/* Summary */
+const sumCheckIn = document.getElementById('sumCheckIn');
+const sumCheckOut = document.getElementById('sumCheckOut');
+const sumBase = document.getElementById('sumBase');
+const sumTotal = document.getElementById('sumTotal');
+
+function eur(n){ return '€ ' + n.toFixed(2).replace('.',','); }
+function updateSummary(){
+  if(checkIn){
+    sumCheckIn.textContent = fmt(checkIn);
+  }else{
+    sumCheckIn.textContent = '—';
+  }
+  if(checkOut){
+    sumCheckOut.textContent = fmt(checkOut);
+  }else{
+    sumCheckOut.textContent = '—';
+  }
+
+  if(checkIn && checkOut){
+    const nights = diffNights(checkIn, checkOut);
+    const base = nights * NIGHT_PRICE;
+    const total = base + CLEANING + TOURIST_TAX;
+    sumBase.textContent = eur(base);
+    sumTotal.textContent = eur(total);
+  }else{
+    sumBase.textContent = '€ 0,00';
+    sumTotal.textContent = '€ 0,00';
+  }
+}
+
+renderMonths();
+
+/* CTA (nu nog dummy) */
+document.getElementById('ctaBtn').addEventListener('click',()=>{
+  if(!(checkIn && checkOut)){
+    alert('Kies eerst een geldige periode (minimaal 5 nachten).');
+    return;
+  }
+  // Later vervangen met eigen pagina of Micazu link
+  alert('Top! Dit leidt later naar je eigen boekpagina.');
+});
 </script>
 </body>
 </html>
