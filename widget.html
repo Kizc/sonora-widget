@@ -1,80 +1,278 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Soñora Curaçao Widget</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soñora – Fotogalerij</title>
 <style>
-  body {font-family:Poppins,sans-serif;margin:0;background:#fff;color:#122F4D;}
-  .container {display:flex;flex-wrap:wrap;max-width:1200px;margin:auto;padding:20px;gap:20px;}
-  .left {flex:1 1 350px;}
-  .right {flex:1 1 600px;}
-  .calendar {border:1px solid #eee;border-radius:12px;padding:15px;}
-  .gallery-main {width:100%;height:400px;border-radius:12px;overflow:hidden;margin-bottom:10px;cursor:pointer;}
-  .gallery-main img {width:100%;height:100%;object-fit:cover;border-radius:12px;}
-  .thumbs {display:flex;flex-wrap:wrap;gap:8px;}
-  .thumbs img {width:100px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;}
-  #lightbox {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);
-             justify-content:center;align-items:center;z-index:9999;}
-  #lightbox img {max-width:90%;max-height:85%;border-radius:12px;}
-  #lightbox span {position:absolute;top:20px;right:30px;font-size:30px;color:white;cursor:pointer;}
+  :root{
+    --bg:#FBF5E9;
+    --radius:16px;
+    --thumb-radius:10px;
+    --accent:#F3814B;
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    color:#122F4D;
+    display:flex;
+    justify-content:center;
+    padding:24px;
+  }
+
+  /* Collage: 1 groot links, 4 klein rechts (2x2) */
+  .photo-collage{
+    width:100%;
+    max-width:1200px;
+    display:grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap:10px;
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 4px 14px rgba(0,0,0,.08);
+  }
+  .photo-collage .cell{
+    position:relative;
+    overflow:hidden;
+    background:#ddd;
+    cursor:pointer;
+  }
+  /* grote linker */
+  .photo-collage .cell:first-child{
+    grid-row:1 / 3;
+    grid-column:1 / 2;
+    aspect-ratio: 4 / 3;
+  }
+  /* kleine rechts */
+  .photo-collage .cell:not(:first-child){ aspect-ratio: 1 / 1; }
+
+  .photo-collage img{
+    width:100%; height:100%;
+    object-fit:cover;
+    transition:transform .25s ease;
+    display:block;
+  }
+  .photo-collage img:hover{ transform:scale(1.03); }
+
+  /* Lightbox */
+  .lightbox{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.85);
+    display:none; /* toggled to flex */
+    flex-direction:column;
+    justify-content:center; align-items:center;
+    z-index:9999;
+  }
+  .lightbox.open{ display:flex; }
+
+  .lb-stage{
+    position:relative;
+    width:min(92vw,1100px);
+    max-height:78vh;
+    display:flex; justify-content:center; align-items:center;
+  }
+  .lb-img{
+    max-width:100%;
+    max-height:78vh;
+    border-radius:12px;
+    box-shadow:0 0 24px rgba(0,0,0,.5);
+    opacity:0; transition:opacity .25s ease;
+  }
+  .lb-img.show{ opacity:1; }
+
+  .lb-close{
+    position:absolute; top:-48px; right:0;
+    width:36px; height:36px; border-radius:50%;
+    background:rgba(255,255,255,.2);
+    color:#fff; display:grid; place-items:center;
+    font-size:22px; cursor:pointer;
+    backdrop-filter: blur(2px);
+  }
+  .lb-close:hover{ background:rgba(255,255,255,.35); }
+
+  .lb-arrow{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:44px; height:44px; border-radius:50%;
+    background:rgba(255,255,255,.2);
+    color:#fff; display:grid; place-items:center;
+    font-size:26px; cursor:pointer; user-select:none;
+  }
+  .lb-arrow:hover{ background:rgba(255,255,255,.35); }
+  .lb-prev{ left:-58px; }
+  .lb-next{ right:-58px; }
+
+  /* Teller */
+  .lb-counter{
+    margin-top:10px; color:#fff; opacity:.85; font-size:14px;
+  }
+
+  /* Thumbnails-strip */
+  .lb-thumbs{
+    margin-top:14px;
+    width:min(95vw,1200px);
+    display:flex; gap:8px; overflow-x:auto; padding:6px;
+    scrollbar-width:thin;
+  }
+  .lb-thumbs::-webkit-scrollbar{ height:8px; }
+  .lb-thumbs::-webkit-scrollbar-thumb{ background:#777; border-radius:8px; }
+
+  .lb-thumb{
+    flex:0 0 auto;
+    width:110px; height:78px; border-radius:var(--thumb-radius);
+    overflow:hidden; cursor:pointer; position:relative;
+    outline:2px solid transparent;
+  }
+  .lb-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .lb-thumb.active{ outline:2px solid var(--accent); }
+  .lb-thumb::after{
+    content:""; position:absolute; inset:0; border-radius:var(--thumb-radius);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+    pointer-events:none;
+  }
+
+  /* Responsief pijlen dichterbij op small screens */
+  @media (max-width: 900px){
+    .lb-prev{ left:8px; } .lb-next{ right:8px; }
+    .lb-close{ top:8px; right:8px; }
+    .lb-stage{ width:96vw; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="left">
-    <h2>Soñora Curaçao</h2>
-    <p>Ontsnap aan de drukte en geniet van zon, zee en rust bij Soñora. Slechts 10 minuten rijden van Jan Thiel en Mambo Beach.
-    Geniet van een ruime tuin met sfeerverlichting en een comfortabele lounge onder de palapa.</p>
-    <div class="calendar" id="calendar">Kalender komt hier</div>
-  </div>
-  <div class="right">
-    <div class="gallery-main"><img id="mainImg" src="https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg" alt="Soñora"></div>
-    <div class="thumbs" id="thumbs"></div>
-  </div>
+
+<!-- Collage (klik opent lightbox) -->
+<div class="photo-collage" id="collage">
+  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg" alt=""></div>
+  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg" alt=""></div>
+  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg" alt=""></div>
+  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg" alt=""></div>
+  <div class="cell"><img src="https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg" alt=""></div>
 </div>
-<div id="lightbox"><span onclick="closeLightbox()">&times;</span><img id="lightboxImg"></div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" aria-modal="true" role="dialog">
+  <div class="lb-stage">
+    <div class="lb-arrow lb-prev" id="prev" aria-label="Vorige">&#10094;</div>
+    <img id="lbImg" class="lb-img" src="" alt="Soñora foto" />
+    <div class="lb-arrow lb-next" id="next" aria-label="Volgende">&#10095;</div>
+    <div class="lb-close" id="close" aria-label="Sluiten">✕</div>
+  </div>
+  <div class="lb-counter" id="counter">1 / 26</div>
+  <div class="lb-thumbs" id="thumbStrip"></div>
+</div>
 
 <script>
-const photos = [
-"https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-bee89974.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-0f1c08b5.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-00f6f222.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-fe98ab23.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-6d684c5f.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-12945435.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-8edf69d8.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-960a9f20.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-20c3d686.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-ed6dd728.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-c1052fd7.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-73c76588.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-ead4ca50.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-96f96634.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-289c1a0a.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-16b862c9.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-c88c1625.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-6cba3773.JPG",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-2c9511c3.JPG",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-75d88fdf.jpg",
-"https://images.micazu.nl/_images/house/52870/images/Sonora-e0cf1958.jpg"
-];
+  // ====== Alle 26 foto's (zoals je eerder stuurde) ======
+  const PHOTOS = [
+"https://images.micazu.nl/_images/house/52870/images/Sonora-2ba989f3.jpg?crop=107,0,1814,1280&srotate=0&width=800&height=600&mode=crop&scale=both",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c69ff8d0.jpg?crop=145,0,1774,1222&srotate=0&width=800&height=600&mode=crop&scale=both",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-85c7dc68.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-0a30caf4.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-f7a24994.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-bee89974.jpg?crop=11,0,1718,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-0f1c08b5.jpg?crop=107,0,1812,1279&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-00f6f222.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-fe98ab23.jpg?crop=156,0,1860,1278&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-6d684c5f.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-12945435.jpg?&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-8edf69d8.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-960a9f20.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-20c3d686.jpg?&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-ed6dd728.jpg?&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c1052fd7.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-73c76588.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-ead4ca50.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-96f96634.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-289c1a0a.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-16b862c9.jpg?&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-c88c1625.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-6cba3773.JPG?crop=0,0,1920,1440&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-2c9511c3.JPG?crop=0,0,1920,1440&srotate=0&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-75d88fdf.jpg?&width=1600&height=1200&mode=crop",
+"https://images.micazu.nl/_images/house/52870/images/Sonora-e0cf1958.jpg?crop=107,0,1814,1280&srotate=0&width=1600&height=1200&mode=crop"
+  ];
 
-const thumbs=document.getElementById('thumbs');
-photos.forEach((url,i)=>{
-  const img=document.createElement('img');
-  img.src=url; img.onclick=()=>{document.getElementById('mainImg').src=url; openLightbox(i)};
-  thumbs.appendChild(img);
-});
+  // Collage: klik opent LB op die index
+  const collage = document.getElementById('collage');
+  collage.querySelectorAll('img').forEach((img, i) => {
+    img.addEventListener('click', () => openLightbox(i));
+  });
 
-let current=0;
-function openLightbox(i){current=i;document.getElementById('lightbox').style.display='flex';document.getElementById('lightboxImg').src=photos[i];}
-function closeLightbox(){document.getElementById('lightbox').style.display='none';}
+  // Lightbox elements
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const closeBtn = document.getElementById('close');
+  const counter = document.getElementById('counter');
+  const strip = document.getElementById('thumbStrip');
+
+  let current = 0;
+
+  // Build thumbnails
+  PHOTOS.forEach((url, idx) => {
+    const t = document.createElement('div');
+    t.className = 'lb-thumb';
+    const im = document.createElement('img');
+    im.src = url;
+    im.alt = 'thumb '+(idx+1);
+    t.appendChild(im);
+    t.addEventListener('click', () => show(idx));
+    strip.appendChild(t);
+  });
+
+  function openLightbox(startIndex=0){
+    current = startIndex;
+    lb.classList.add('open');
+    show(current);
+  }
+  function closeLightbox(){
+    lb.classList.remove('open');
+  }
+
+  function show(i){
+    current = (i + PHOTOS.length) % PHOTOS.length;
+    lbImg.classList.remove('show');
+    lbImg.src = PHOTOS[current];
+    // wait a tick to fade in
+    requestAnimationFrame(()=>lbImg.classList.add('show'));
+    counter.textContent = (current+1) + ' / ' + PHOTOS.length;
+    updateActiveThumb();
+    ensureThumbInView();
+  }
+
+  function updateActiveThumb(){
+    [...strip.children].forEach((el, idx)=>{
+      el.classList.toggle('active', idx === current);
+    });
+  }
+  function ensureThumbInView(){
+    const el = strip.children[current];
+    if(!el) return;
+    const elLeft = el.offsetLeft;
+    const elRight = elLeft + el.offsetWidth;
+    if(elLeft < strip.scrollLeft) strip.scrollLeft = elLeft - 8;
+    else if(elRight > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = elRight - strip.clientWidth + 8;
+  }
+
+  prev.addEventListener('click', ()=>show(current-1));
+  next.addEventListener('click', ()=>show(current+1));
+  closeBtn.addEventListener('click', closeLightbox);
+
+  // sluit bij klik op donkere achtergrond (maar niet op de foto/knoppen)
+  lb.addEventListener('click', (e)=>{
+    if(e.target === lb) closeLightbox();
+  });
+
+  // keyboard controls
+  window.addEventListener('keydown', (e)=>{
+    if(!lb.classList.contains('open')) return;
+    if(e.key === 'Escape') closeLightbox();
+    if(e.key === 'ArrowRight') show(current+1);
+    if(e.key === 'ArrowLeft') show(current-1);
+  });
 </script>
 </body>
 </html>
