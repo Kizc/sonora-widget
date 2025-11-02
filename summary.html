@@ -16,9 +16,10 @@ body{
   font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   color:var(--text);
   padding:20px;
+  overflow:hidden;
 }
 
-/* CARD */
+/* ===== SUMMARY ===== */
 .summary{
   background:white;
   border-radius:16px;
@@ -28,6 +29,7 @@ body{
   margin:auto;
   display:flex;
   flex-direction:column;
+  transition:transform .5s ease, opacity .4s ease;
 }
 .sum-head{
   background:#122F4D;
@@ -72,11 +74,73 @@ button:hover{filter:brightness(.95);}
   color:#666;
   padding:10px;
 }
+
+/* ===== FORM OVERLAY ===== */
+#formOverlay{
+  position:fixed;
+  inset:0;
+  background:white;
+  z-index:999;
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(0.98);}
+  to{opacity:1;transform:scale(1);}
+}
+.form-card{
+  background:var(--bg);
+  border-radius:20px;
+  padding:30px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.1);
+  width:min(90%,500px);
+}
+.form-card h3{
+  text-align:center;
+  color:var(--text);
+  margin-top:0;
+}
+label{display:block;margin-top:15px;font-weight:600;}
+input,textarea,select{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-family:inherit;
+  font-size:1rem;
+}
+textarea{resize:vertical;min-height:80px;}
+.back-btn{
+  position:absolute;
+  top:20px;left:20px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:1.1rem;
+  cursor:pointer;
+  font-weight:600;
+}
+.send-btn{
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:12px;
+  width:100%;
+  margin-top:20px;
+  font-weight:600;
+  cursor:pointer;
+}
+.send-btn:hover{filter:brightness(.95);}
 </style>
 </head>
 <body>
 
-<div class="summary">
+<!-- SAMENVATTING -->
+<div class="summary" id="summaryBox">
   <div class="sum-head">
     <h3>Jouw verblijf bij Soñora</h3>
     <p style="margin:4px 0 0;opacity:0.9;">Boek direct je zonnige ontsnapping 🌴</p>
@@ -89,10 +153,38 @@ button:hover{filter:brightness(.95);}
     <div class="line"><span>Schoonmaakkosten</span><span>€90</span></div>
     <div class="line"><span>Toeristenbelasting</span><span>€31,50</span></div>
     <div class="line total"><span>Totaal</span><span id="total">€0</span></div>
-    <button onclick="window.location.href='#'">Boek nu</button>
+    <button id="bookBtn">Boek nu</button>
   </div>
   <div class="footer">
     Geen aanbetaling nodig. Gratis annuleren tot 30 dagen voor aankomst.
+  </div>
+</div>
+
+<!-- FORMULIER OVERLAY -->
+<div id="formOverlay">
+  <button class="back-btn" id="backBtn">← Terug</button>
+  <div class="form-card">
+    <h3>Reservering afronden</h3>
+    <p id="formDates" style="text-align:center;margin-top:-5px;"></p>
+
+    <label>Naam</label>
+    <input type="text" id="name" placeholder="Voor- en achternaam" />
+
+    <label>E-mail</label>
+    <input type="email" id="email" placeholder="naam@voorbeeld.com" />
+
+    <label>Telefoon</label>
+    <input type="tel" id="phone" placeholder="+31 6 12345678" />
+
+    <label>Aantal gasten</label>
+    <select id="guests">
+      <option>1</option><option>2</option><option>3</option><option>4</option>
+    </select>
+
+    <label>Opmerkingen</label>
+    <textarea id="notes" placeholder="Bijv. late aankomst, speciale wensen..."></textarea>
+
+    <button class="send-btn" id="sendBtn">Verstuur reservering</button>
   </div>
 </div>
 
@@ -101,6 +193,10 @@ const elIn = document.getElementById("in");
 const elOut = document.getElementById("out");
 const elNights = document.getElementById("nights");
 const elTotal = document.getElementById("total");
+const formOverlay = document.getElementById("formOverlay");
+const bookBtn = document.getElementById("bookBtn");
+const backBtn = document.getElementById("backBtn");
+const formDates = document.getElementById("formDates");
 
 window.addEventListener("message", (event)=>{
   if(event.data.type === "updateSummary"){
@@ -110,6 +206,32 @@ window.addEventListener("message", (event)=>{
     elTotal.textContent = "€ " + event.data.total.toFixed(2);
   }
 });
+
+// Open formulier fullscreen
+bookBtn.onclick = ()=>{
+  formOverlay.style.display = "flex";
+  formDates.innerHTML = `
+    <b>${elIn.textContent}</b> – <b>${elOut.textContent}</b><br>
+    Totaalbedrag: ${elTotal.textContent}
+  `;
+  document.getElementById("summaryBox").style.opacity = "0";
+  document.getElementById("summaryBox").style.transform = "scale(0.9)";
+};
+
+// Terug naar samenvatting
+backBtn.onclick = ()=>{
+  formOverlay.style.display = "none";
+  document.getElementById("summaryBox").style.opacity = "1";
+  document.getElementById("summaryBox").style.transform = "scale(1)";
+};
+
+// Verzenden (placeholder)
+document.getElementById("sendBtn").onclick = ()=>{
+  alert("Bedankt voor je reservering! We nemen snel contact met je op.");
+  formOverlay.style.display = "none";
+  document.getElementById("summaryBox").style.opacity = "1";
+  document.getElementById("summaryBox").style.transform = "scale(1)";
+};
 </script>
 </body>
 </html>
