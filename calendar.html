@@ -101,11 +101,57 @@ const CLEANING = 90;
 const TOURIST_TAX = 31.50;
 const MIN_NIGHTS = 5;
 
-/* Blokkeer 22–31 dec 2025 */
-const blocked = [];
-for(let d=22; d<=31; d++){ blocked.push(`2025-12-${String(d).padStart(2,'0')}`); }
+/* ---------- BEZETTE DAGEN (handmatig + iCal) ---------- */
+let blocked = [];
 
-let baseMonth = new Date(2025,10,1); // november
+// Voorbeeld: vaste blokkeringen
+for (let d = 22; d <= 31; d++) {
+  blocked.push(`2025-12-${String(d).padStart(2, '0')}`);
+}
+
+// Voeg hier je iCal-feed toe
+const ICAL_URL = "https://www.micazu.nl/calendar/50435.ics"; // vervang door jouw echte iCal-link
+
+async function loadICal() {
+  try {
+    const res = await fetch(ICAL_URL);
+    if (!res.ok) throw new Error("Kan iCal niet laden");
+    const text = await res.text();
+
+    // Parse DTSTART / DTEND
+    const events = [...text.matchAll(/DTSTART(?:;VALUE=DATE)?:(\d{8})[\s\S]*?DTEND(?:;VALUE=DATE)?:(\d{8})/g)];
+    for (const e of events) {
+      const start = parseICalDate(e[1]);
+      const end = parseICalDate(e[2]);
+      const cur = new Date(start);
+      while (cur < end) {
+        const ds = formatDate(cur);
+        if (!blocked.includes(ds)) blocked.push(ds);
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    console.log(`iCal geladen (${blocked.length} dagen geblokkeerd)`);
+    renderMonths(); // opnieuw tekenen zodra data geladen is
+  } catch (err) {
+    console.warn("Kon iCal niet laden:", err.message);
+    renderMonths();
+  }
+}
+
+function parseICalDate(str) {
+  return new Date(
+    parseInt(str.substr(0, 4)),
+    parseInt(str.substr(4, 2)) - 1,
+    parseInt(str.substr(6, 2))
+  );
+}
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/* ---------- KALENDER RENDERING ---------- */
+let baseMonth = new Date(2025,10,1); // start in november 2025
 let checkIn=null, checkOut=null;
 
 const monthsWrap=document.getElementById('months');
@@ -146,21 +192,25 @@ function renderMonth(first){
   wrap.appendChild(g);
   return wrap;
 }
+
+/* ---------- SELECTIE & LOGICA ---------- */
 function onPick(ds,isBlocked){
   if(isBlocked) return;
   const d=new Date(ds);
-  if(!checkIn || (checkIn && checkOut)){checkIn=d;checkOut=null;paintRange();hint.textContent=`Gekozen aankomst: ${fmt(d)}. Kies vertrekdatum.`;}
-  else if(d>checkIn){
+  if(!checkIn || (checkIn && checkOut)){
+    checkIn=d;checkOut=null;
+    paintRange();
+    hint.textContent=`Gekozen aankomst: ${fmt(d)}. Kies vertrekdatum.`;
+  } else if(d>checkIn){
     const nights=diff(checkIn,d);
     if(nights<MIN_NIGHTS){alert(`Minimaal ${MIN_NIGHTS} nachten.`);return;}
-    if(validRange(checkIn,d)){checkOut=d;paintRange();updateSummary();}
-    else alert("Periode bevat bezette dagen.");
+    if(validRange(checkIn,d)){
+      checkOut=d;paintRange();updateSummary();
+    } else alert("Periode bevat bezette dagen.");
   }
 }
 function paintRange(){
-  document.querySelectorAll('.day').forEach(day=>{
-    day.classList.remove('selected','in-range');
-  });
+  document.querySelectorAll('.day').forEach(day=>day.classList.remove('selected','in-range'));
   document.querySelectorAll('.day').forEach(day=>{
     if(day.classList.contains('empty')||day.classList.contains('booked')) return;
     const monthName=day.closest('.month').querySelector('h4').textContent.split(' ');
@@ -176,7 +226,7 @@ function paintRange(){
 function validRange(a,b){
   const cur=new Date(a);
   while(cur<b){
-    const ds=`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+    const ds=formatDate(cur);
     if(blocked.includes(ds)) return false;
     cur.setDate(cur.getDate()+1);
   }
@@ -194,7 +244,8 @@ function updateSummary(){
   }
 }
 
-renderMonths();
+/* Start */
+loadICal();
 </script>
 </body>
 </html>
