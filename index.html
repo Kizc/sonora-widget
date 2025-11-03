@@ -5,213 +5,282 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Soñora Curaçao Widget</title>
 <style>
-:root {
-  --bg: #FBF5E9;
-  --accent: #F3814B;
-  --text: #122F4D;
+:root{--bg:#FBF5E9;--accent:#F3814B;--text:#122F4D;}
+body{margin:0;background:var(--bg);font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);overflow-x:hidden}
+
+/* ===== GALLERY FULL WIDTH ===== */
+.gallery-wrapper {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.gallery-wrapper iframe {
+  width: 100%;
+  height: 90vh;
+  border: none;
+  display: block;
+}
+@media (max-width:768px){
+  .gallery-wrapper iframe{height:70vh;}
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: var(--text);
-}
-
+/* ===== PAGE LAYOUT ===== */
 .container {
   max-width: 1200px;
   margin: auto;
-  padding: 20px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 10px;
+  transition: opacity 0.4s ease;
 }
+iframe{width:100%;border:none;border-radius:18px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.booking-section{display:flex;flex-wrap:wrap;gap:20px}
+.left{flex:2 1 60%}
+.right{flex:1 1 35%;position:sticky;top:20px;align-self:flex-start}
+@media(max-width:900px){.booking-section{flex-direction:column}.right{position:static}}
 
-/* Booking section layout */
-.booking-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-.left {
-  flex: 2 1 60%;
-}
-.right {
-  flex: 1 1 35%;
-  position: sticky;
-  top: 20px;
-  align-self: flex-start;
-}
+/* ===== POPUP ===== */
+#bookingOverlay{position:fixed;inset:0;width:100%;height:100%;
+background:linear-gradient(to bottom,var(--bg) 0%,#f7efe0 100%);
+display:none;flex-direction:column;justify-content:flex-start;align-items:center;
+overflow-y:auto;z-index:999;padding:60px 0 160px}
+.form-card{background:#fff;border-radius:20px;padding:50px 60px;width:min(92%,1000px);
+box-shadow:0 12px 40px rgba(0,0,0,.1);animation:slideUp .4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-@media(max-width: 900px) {
-  .booking-section {
-    flex-direction: column;
-  }
-  .right {
-    position: static;
-  }
-}
+/* Progress */
+.progress{display:flex;justify-content:space-between;position:relative;margin-bottom:45px}
+.progress::before{content:"";position:absolute;top:17px;left:0;width:100%;height:3px;background:#eee;z-index:0}
+.step{position:relative;z-index:1;text-align:center;flex:1;font-weight:600;color:#aaa;font-size:1rem}
+.step::before{content:"";display:block;width:14px;height:14px;border-radius:50%;margin:0 auto 8px;background:#ccc;transition:all .3s ease}
+.step.active{color:var(--accent)}
+.step.active::before{background:var(--accent);width:16px;height:16px}
+.form-step{opacity:0;transform:translateY(10px);transition:all .35s ease}
+.form-step.show{opacity:1;transform:translateY(0)}
 
-iframe {
-  width: 100%;
-  border: none;
-  border-radius: 0; /* geen afgeronde hoeken */
-  box-shadow: none; /* geen schaduw of rand */
-}
+/* Inputs */
+label{display:block;margin-top:18px;font-weight:600;color:var(--text)}
+input,select{width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:12px;
+font-family:inherit;font-size:1rem;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(243,129,75,.25);outline:none}
+select{appearance:none;
+background-image:url('data:image/svg+xml;utf8,<svg fill="%23122F4D" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+background-repeat:no-repeat;background-position:right 14px center;background-size:16px}
 
+/* Terms */
+.terms{margin-top:25px;display:flex;flex-direction:column;gap:10px;font-size:.95rem}
+.terms label{display:flex;align-items:flex-start;gap:8px;font-weight:500}
+.terms input{width:18px;height:18px;margin-top:3px;cursor:pointer}
+.terms a{color:var(--accent);text-decoration:none}
+.terms a:hover{text-decoration:underline}
 
-/* Fullscreen overlay form */
-#bookingOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: white;
-  z-index: 9999;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
-  padding: 40px 0;
-  animation: fadeIn 0.4s ease;
-}
+/* Summary & extras */
+.summary-card{background:#FBF5E9;border:1px solid #F3D3BC;border-radius:14px;
+padding:18px 22px;margin-bottom:30px;text-align:center;color:var(--text);
+font-weight:600;box-shadow:inset 0 0 10px rgba(0,0,0,.03)}
+.extras{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.extra-item{display:flex;justify-content:space-between;align-items:center;
+background:#fff8ef;border:1px solid #f3d3bc;border-radius:12px;
+padding:14px 16px;font-size:.95rem;color:var(--text)}
+.extra-item small{color:#555;font-size:.85rem}
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
+/* Nav buttons */
+.nav-btns{display:flex;justify-content:space-between;margin-top:40px;gap:10px}
+.next-btn,.prev-btn,.send-btn{background:var(--accent);color:#fff;border:none;border-radius:12px;
+padding:14px 18px;font-weight:600;cursor:pointer;font-size:1.05rem;
+box-shadow:0 6px 16px rgba(243,129,75,.3);transition:transform .2s,box-shadow .2s}
+.prev-btn{background:#ccc;color:#122F4D}
+.next-btn:hover,.send-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(243,129,75,.4)}
+.prev-btn:hover{filter:brightness(.95)}
+#review{background:#FBF5E9;border:1px solid #F3D3BC;border-radius:14px;
+padding:25px;margin-bottom:30px;font-size:1rem;line-height:1.7}
 
-.form-card {
-  background: var(--bg);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  width: min(90%, 500px);
-}
-
-.form-card h3 {
-  text-align: center;
-  color: var(--text);
-  margin-top: 0;
-}
-
-label {
-  display: block;
-  margin-top: 15px;
-  font-weight: 600;
-}
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-family: inherit;
-  font-size: 1rem;
-}
-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-.back-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 1.1rem;
-  cursor: pointer;
-  font-weight: 600;
-}
-.send-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
-  width: 100%;
-  margin-top: 20px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.send-btn:hover {
-  filter: brightness(.95);
-}
+/* Annuleren */
+.back-btn{position:fixed;top:24px;left:30px;background:transparent;border:none;
+color:var(--text);font-size:1.1rem;cursor:pointer;font-weight:700;opacity:.8;z-index:1000}
+.back-btn:hover{opacity:1}
+#confirmModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:1001;
+align-items:center;justify-content:center;padding:20px}
+.confirm-card{background:#fff;border-radius:16px;padding:22px;width:min(95%,460px);
+box-shadow:0 12px 32px rgba(0,0,0,.2)}
+.confirm-card h4{margin:0 0 10px}
+.confirm-card p{margin:0 0 18px;color:#444}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+.btn{border:none;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn.cancel{background:#eee;color:#222}
+.btn.danger{background:#ef4444;color:#fff}
+.hidden{display:none}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <!-- FOTO GALLERIJ -->
-  <iframe id="galleryFrame" src="gallery.html" height="420"></iframe>
+<!-- GALLERY FULL WIDTH -->
+<div class="gallery-wrapper">
+  <iframe id="galleryFrame" src="gallery.html"></iframe>
+</div>
 
-  <!-- BOEKINGSSECTIE -->
+<div class="container" id="content">
   <div class="booking-section">
-    <div class="left">
-      <iframe id="calendarFrame" src="calendar.html" height="650"></iframe>
-    </div>
-    <div class="right">
-      <iframe id="summaryFrame" src="summary.html" height="500"></iframe>
-    </div>
+    <div class="left"><iframe id="calendarFrame" src="calendar.html" height="650"></iframe></div>
+    <div class="right"><iframe id="summaryFrame" src="summary.html" height="500"></iframe></div>
   </div>
 </div>
 
-<!-- FULLSCREEN FORM -->
+<!-- POPUP -->
 <div id="bookingOverlay">
-  <button class="back-btn" id="closeOverlay">← Terug</button>
+  <button class="back-btn" id="closeOverlay">Annuleren</button>
   <div class="form-card">
-    <h3>Reservering afronden</h3>
-    <p id="formDates" style="text-align:center;margin-top:-5px;"></p>
+    <div class="progress">
+      <div class="step active">Reisgezelschap</div>
+      <div class="step">Mijn gegevens</div>
+      <div class="step">Controleren</div>
+    </div>
 
-    <label>Naam</label>
-    <input type="text" id="name" placeholder="Voor- en achternaam" />
+    <!-- STAP 1 -->
+    <div class="form-step" id="step1">
+      <h3>Reisgezelschap & extra’s</h3>
+      <div id="formDates" class="summary-card">
+        <b>Check-in:</b> <span id="popupIn">—</span><br>
+        <b>Check-out:</b> <span id="popupOut">—</span><br>
+        <b>Totaal:</b> <span id="popupTotal">—</span>
+      </div>
+      <label>Volwassenen vanaf 18 jaar *</label>
+      <select id="adults" required><option value="">Selecteer</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <label>Kinderen 3–17 jaar</label>
+      <select id="children"><option>0</option><option>1</option><option>2</option><option>3</option></select>
+      <label>Baby’s t/m 2 jaar</label>
+      <select id="babies"><option>0</option><option>1</option><option>2</option></select>
+      <h4>Bijkomende extra’s</h4>
+      <div class="extras">
+        <div class="extra-item"><div><b>Eindschoonmaak</b><br><small>€ 90,00</small></div><span>✔️</span></div>
+        <div class="extra-item"><div><b>Toeristenbelasting</b><br><small>€ 31,50</small></div><span>✔️</span></div>
+        <div class="extra-item"><div><b>Borg</b><br><small>€ 275,00</small></div><span>✔️</span></div>
+      </div>
+      <div class="nav-btns"><button class="next-btn">Volgende →</button></div>
+    </div>
 
-    <label>E-mail</label>
-    <input type="email" id="email" placeholder="naam@voorbeeld.com" />
+    <!-- STAP 2 -->
+    <div class="form-step hidden" id="step2">
+      <h3>Mijn gegevens</h3>
+      <label>Voornaam *</label><input type="text" id="fname" required>
+      <label>Achternaam *</label><input type="text" id="lname" required>
+      <label>Geboortedatum *</label><input type="date" id="dob" required>
+      <label>Land *</label><input type="text" id="country" value="Nederland" required>
+      <label>Straat & huisnummer *</label><input type="text" id="street" required>
+      <label>Postcode *</label><input type="text" id="postcode" required>
+      <label>Plaats *</label><input type="text" id="city" required>
+      <label>Telefoon *</label><input type="tel" id="phone" required>
+      <label>E-mail *</label><input type="email" id="email" required>
+      <div class="terms">
+        <label><input type="checkbox" id="agreeTerms" required>Ik ga akkoord met de <a href="algemene-voorwaarden.html" target="_blank">algemene voorwaarden</a>.</label>
+        <label><input type="checkbox" id="agreeRules" required>Ik ga akkoord met de <a href="huisregels.html" target="_blank">huisregels</a>.</label>
+        <label><input type="checkbox" id="agreePrivacy" required>Ik ga akkoord met het <a href="privacy.html" target="_blank">privacybeleid</a>.</label>
+      </div>
+      <div class="nav-btns"><button class="prev-btn">← Terug</button><button class="next-btn">Volgende →</button></div>
+    </div>
 
-    <label>Telefoon</label>
-    <input type="tel" id="phone" placeholder="+31 6 12345678" />
-
-    <label>Aantal gasten</label>
-    <select id="guests">
-      <option>1</option><option>2</option><option>3</option><option>4</option>
-    </select>
-
-    <label>Opmerkingen</label>
-    <textarea id="notes" placeholder="Bijv. late aankomst, speciale wensen..."></textarea>
-
-    <button class="send-btn" id="sendBtn">Verstuur reservering</button>
+    <!-- STAP 3 -->
+    <div class="form-step hidden" id="step3">
+      <h3>Controleer je gegevens</h3>
+      <div id="review"></div>
+      <div class="nav-btns"><button class="prev-btn">← Terug</button><button class="send-btn">Reservering versturen</button></div>
+    </div>
   </div>
 </div>
 
+<!-- CONFIRM CANCEL -->
+<div id="confirmModal">
+  <div class="confirm-card">
+    <h4>Weet je het zeker?</h4>
+    <p>Als je nu annuleert, worden je gegevens niet opgeslagen.</p>
+    <div class="confirm-actions">
+      <button class="btn cancel" id="stayBtn">Nee, terug</button>
+      <button class="btn danger" id="confirmCancelBtn">Ja, annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <script>
-const overlay = document.getElementById("bookingOverlay");
-const closeOverlay = document.getElementById("closeOverlay");
-const formDates = document.getElementById("formDates");
+emailjs.init("JOUW_PUBLIC_KEY");
+const overlay=document.getElementById("bookingOverlay"),content=document.getElementById("content"),
+steps=[...document.querySelectorAll(".form-step")],progressSteps=[...document.querySelectorAll(".step")];
+let currentStep=0;
 
-// Ontvangt bericht van summary.html
-window.addEventListener("message", (event) => {
-  if (event.data.type === "openBookingForm") {
-    const { checkIn, checkOut, total } = event.data;
-    formDates.innerHTML = `
-      <b>${checkIn}</b> – <b>${checkOut}</b><br>
-      Totaalbedrag: ${total}
-    `;
-    overlay.style.display = "flex";
+window.addEventListener("message",e=>{
+ if(e.data.type==="openBookingForm"){
+  popupIn.textContent=e.data.checkIn;popupOut.textContent=e.data.checkOut;popupTotal.textContent=e.data.total;
+  content.style.opacity="0.2";overlay.style.display="flex";showStep(0);
+ }});
+
+function showStep(i){steps.forEach((s,ix)=>{s.classList.toggle("hidden",ix!==i);s.classList.remove("show")});
+ void steps[i].offsetWidth;steps[i].classList.add("show");
+ progressSteps.forEach((p,ix)=>p.classList.toggle("active",ix<=i));currentStep=i;}
+
+function validateStep(){
+ const cur=steps[currentStep];
+ const inputs=cur.querySelectorAll("input[required],select[required]");
+ for(const inp of inputs){
+  if(inp.type==="checkbox"&&!inp.checked){
+    alert("Je moet akkoord gaan met alle voorwaarden voordat je verder kunt.");return false;
   }
-});
+  if(inp.type!=="checkbox"&&!inp.value.trim()){
+    inp.style.borderColor="red";
+    inp.scrollIntoView({behavior:"smooth",block:"center"});
+    return false;
+  } else inp.style.borderColor="";
+ }
+ return true;
+}
 
-// Terugknop
-closeOverlay.onclick = () => {
-  overlay.style.display = "none";
+document.querySelectorAll(".next-btn").forEach(b=>b.onclick=()=>{if(!validateStep())return;
+ if(currentStep<steps.length-1){if(currentStep===1)fillReview();showStep(currentStep+1);}});
+document.querySelectorAll(".prev-btn").forEach(b=>b.onclick=()=>{if(currentStep>0)showStep(currentStep-1);});
+
+closeOverlay.onclick=()=>confirmModal.style.display="flex";
+stayBtn.onclick=()=>confirmModal.style.display="none";
+confirmCancelBtn.onclick=()=>{confirmModal.style.display="none";overlay.style.display="none";content.style.opacity="1";clearForm();};
+
+function clearForm(){["adults","children","babies","fname","lname","dob","country","street","postcode","city","phone","email","agreeTerms","agreeRules","agreePrivacy"].forEach(id=>{
+ const el=document.getElementById(id);if(el){if(el.type==="checkbox")el.checked=false;else el.value="";}});review.innerHTML="";}
+
+function fillReview(){
+ const g=id=>document.getElementById(id)?.value||"";
+ review.innerHTML=`<b>Verblijf:</b><br>${popupIn.textContent} – ${popupOut.textContent}<br>
+ <b>Totaal:</b> ${popupTotal.textContent}<br><br>
+ <b>Naam:</b> ${g("fname")} ${g("lname")}<br>
+ <b>Adres:</b> ${g("street")}, ${g("postcode")} ${g("city")} (${g("country")})<br>
+ <b>Telefoon:</b> ${g("phone")}<br>
+ <b>E-mail:</b> ${g("email")}<br>`; }
+
+document.querySelector(".send-btn").onclick=async()=>{
+ if(!validateStep())return;
+ const d=collectData();await sendMail(d);
+ overlay.style.display="none";content.style.opacity="1";clearForm();
 };
 
-// Verzenden (placeholder)
-document.getElementById("sendBtn").onclick = () => {
-  alert("Bedankt voor je reservering! We nemen snel contact met je op.");
-  overlay.style.display = "none";
-};
+function collectData(){const v=id=>document.getElementById(id)?.value||"";return{
+ checkIn:popupIn.textContent,checkOut:popupOut.textContent,total:popupTotal.textContent,
+ adults:v("adults"),children:v("children"),babies:v("babies"),fname:v("fname"),lname:v("lname"),dob:v("dob"),
+ country:v("country"),street:v("street"),postcode:v("postcode"),city:v("city"),phone:v("phone"),email:v("email")};}
+
+async function sendMail(d){
+ const year=new Date().getFullYear();
+ try{
+   await emailjs.send("JOUW_SERVICE_ID","JOUW_TEMPLATE_ID",{...d,year});
+   alert("✅ Je reservering is succesvol verzonden! We nemen snel contact met je op.");
+ }catch(err){
+   console.error("Email verzenden mislukt:",err);
+   alert("❌ Er ging iets mis bij het verzenden. Controleer je EmailJS-instellingen.");
+ }
+}
 </script>
 </body>
 </html>

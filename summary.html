@@ -18,6 +18,8 @@ body{
   padding:20px;
   overflow:hidden;
 }
+
+/* Kaart */
 .summary{
   background:white;
   border-radius:16px;
@@ -27,6 +29,11 @@ body{
   margin:auto;
   display:flex;
   flex-direction:column;
+  transition:transform .4s ease, box-shadow .3s ease;
+}
+.summary.active{
+  transform:translateY(-5px);
+  box-shadow:0 6px 20px rgba(0,0,0,0.12);
 }
 .sum-head{
   background:#122F4D;
@@ -34,6 +41,7 @@ body{
   padding:20px;
 }
 .sum-head h3{margin:0;font-size:1.3rem;}
+.sum-head p{margin:4px 0 0;opacity:0.9;}
 .sum-body{
   padding:20px;
   display:flex;
@@ -75,50 +83,58 @@ button:hover{filter:brightness(.95);}
 <div class="summary" id="summaryBox">
   <div class="sum-head">
     <h3>Jouw verblijf bij Soñora</h3>
-    <p style="margin:4px 0 0;opacity:0.9;">Boek direct je zonnige ontsnapping 🌴</p>
+    <p>Boek direct je zonnige ontsnapping 🌴</p>
   </div>
+
   <div class="sum-body">
     <div class="line"><span>Check-in</span><span id="in">-</span></div>
     <div class="line"><span>Check-out</span><span id="out">-</span></div>
     <div class="line"><span>Aantal nachten</span><span id="nights">0</span></div>
-    <div class="line"><span>Prijs per nacht</span><span>€75</span></div>
-    <div class="line"><span>Schoonmaakkosten</span><span>€90</span></div>
-    <div class="line"><span>Toeristenbelasting</span><span>€31,50</span></div>
-    <div class="line total"><span>Totaal</span><span id="total">€0</span></div>
+    <div class="line"><span>Prijs per nacht</span><span>€ 75</span></div>
+    <div class="line"><span>Schoonmaakkosten</span><span>€ 90</span></div>
+    <div class="line"><span>Toeristenbelasting</span><span>€ 31,50</span></div>
+    <div class="line total"><span>Totaal</span><span id="total">€ 0,00</span></div>
     <button id="bookBtn">Boek nu</button>
   </div>
+
   <div class="footer">
     Geen aanbetaling nodig. Gratis annuleren tot 30 dagen voor aankomst.
   </div>
 </div>
 
 <script>
-const elIn = document.getElementById("in");
-const elOut = document.getElementById("out");
-const elNights = document.getElementById("nights");
+const box     = document.getElementById("summaryBox");
+const elIn    = document.getElementById("in");
+const elOut   = document.getElementById("out");
+const elN     = document.getElementById("nights");
 const elTotal = document.getElementById("total");
-const bookBtn = document.getElementById("bookBtn");
+const btn     = document.getElementById("bookBtn");
 
-// Ontvang updates van calendar.html
-window.addEventListener("message", (event)=>{
-  if(event.data.type === "updateSummary"){
-    elIn.textContent = event.data.checkIn || "-";
-    elOut.textContent = event.data.checkOut || "-";
-    elNights.textContent = event.data.nights || 0;
-    elTotal.textContent = "€ " + event.data.total.toFixed(2);
-  }
+/* Ontvang live updates van calendar.html */
+window.addEventListener("message", (e)=>{
+  if(e.data.type!=="updateSummary") return;
+
+  // Toon geanimeerde highlight
+  box.classList.add("active");
+  clearTimeout(box._timer);
+  box._timer=setTimeout(()=>box.classList.remove("active"),800);
+
+  elIn.textContent    = e.data.checkIn || "-";
+  elOut.textContent   = e.data.checkOut || "-";
+  elN.textContent     = e.data.nights || 0;
+  elTotal.textContent = "€ " + (e.data.total||0).toFixed(2);
 });
 
-// Boekknop → stuur gegevens naar parent (index.html)
-bookBtn.onclick = ()=>{
-  const data = {
+/* Boekknop → stuur data naar bovenliggende pagina (index.html) */
+btn.onclick = ()=>{
+  const payload = {
     type: "openBookingForm",
-    checkIn: elIn.textContent,
+    checkIn : elIn.textContent,
     checkOut: elOut.textContent,
-    nights: elNights.textContent,
-    total: elTotal.textContent
+    nights  : elN.textContent,
+    total   : elTotal.textContent
   };
-  window.top.postMessage(data, "*");
+  window.top.postMessage(payload,"*");
 };
 </script>
 </body>

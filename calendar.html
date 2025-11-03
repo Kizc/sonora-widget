@@ -10,8 +10,8 @@
   --accent:#F3814B;
   --text:#122F4D;
   --muted:#6b7b8a;
-  --disabled:#f7b4b4;
-  --range:#FFE5D1;
+  --disabled:#f7b4b4; /* geblokkeerd */
+  --range:#FFE5D1;    /* selectie tussendagen */
 }
 body{
   margin:0;
@@ -21,64 +21,72 @@ body{
   padding:20px;
 }
 
-/* Container */
+/* Kaart */
 .cal-card{
-  background:white;
-  border-radius:12px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
-  padding:20px;
-  max-width:800px;
+  background:#fff;
+  border-radius:18px;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  padding:30px;
+  max-width:950px;
   margin:auto;
 }
-
-/* Titel */
 h2{
   margin-top:0;
   color:var(--accent);
+  font-size:1.6rem;
+  text-align:center;
 }
 
 /* Navigatie */
 .cal-header{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
 }
 button{
-  background:var(--accent);
-  color:#fff;
-  border:none;
-  padding:8px 12px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600;
+  background:var(--accent);color:#fff;border:none;
+  padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;
+  box-shadow:0 3px 8px rgba(243,129,75,.3);
 }
 button:hover{filter:brightness(.95)}
 
-/* Maanden */
+/* Maanden naast elkaar (desktop) */
 .months{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
+  display:flex !important;
+  flex-direction:row !important;
+  justify-content:center;
+  align-items:flex-start;
+  gap:40px;
+  flex-wrap:nowrap !important;
+  width:100%;
 }
 @media(max-width:700px){
-  .months{grid-template-columns:1fr;}
+  .months{flex-direction:column !important;align-items:center;}
 }
 
-/* Maandweergave */
-.month h4{margin:8px 0;color:var(--accent)}
+/* Maand */
+.month{
+  flex:1 1 45%;
+  max-width:420px;
+  background:#fff8ef;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 3px 8px rgba(0,0,0,.05);
+}
+.month h4{
+  margin:10px 0 14px;color:var(--accent);font-size:1.1rem;font-weight:700;text-transform:capitalize;text-align:center;
+}
 .grid-7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;}
 .dow{font-weight:600;color:var(--muted);font-size:.9rem;}
 .day{
-  background:#fff7eb;
-  border-radius:8px;
-  padding:8px 0;
-  cursor:pointer;
-  user-select:none;
+  background:#fff;border-radius:8px;padding:8px 0;cursor:pointer;user-select:none;transition:all .2s ease;
 }
 .day.empty{background:transparent;cursor:default;}
-.day.booked{background:var(--disabled)!important;color:#8a0000!important;cursor:not-allowed;}
-.day.selected{background:var(--accent)!important;color:#fff!important;}
+.day.booked{background:var(--disabled)!important;color:#fff!important;cursor:not-allowed;}
+.day.selected{background:var(--accent)!important;color:#fff!important;font-weight:600;}
 .day.in-range{background:var(--range)!important;}
-.day:hover:not(.booked):not(.empty){filter:brightness(.95);}
-.hint{margin-top:10px;color:var(--muted);font-size:.9rem;text-align:center;}
+.day:hover:not(.booked):not(.empty){background:rgba(243,129,75,.15);}
+
+.hint{margin-top:20px;color:var(--muted);font-size:.95rem;text-align:center;}
+.hint b{color:var(--accent);}
 </style>
 </head>
 <body>
@@ -92,159 +100,253 @@ button:hover{filter:brightness(.95)}
   </div>
 
   <div class="months" id="months"></div>
-  <div class="hint" id="hint">Minimaal verblijf: <b>5 nachten</b>. Kies eerst aankomst, daarna vertrek.</div>
+  <div class="hint" id="hint">
+    Minimaal verblijf: <b>5 nachten</b>. Kies eerst aankomst, daarna vertrek.
+  </div>
 </div>
 
 <script>
+/* ===== Instellingen ===== */
 const NIGHT_PRICE = 75;
 const CLEANING = 90;
 const TOURIST_TAX = 31.50;
 const MIN_NIGHTS = 5;
 
-/* ---------- BEZETTE DAGEN (handmatig + iCal) ---------- */
-let blocked = [];
+/* ===== State ===== */
+let blockedSet = new Set();      // snellere lookup, geen dubbele dagen
+let checkIn = null, checkOut = null;
+let baseMonth = new Date();      // start bij huidige maand
 
-// Voorbeeld: vaste blokkeringen
-for (let d = 22; d <= 31; d++) {
-  blocked.push(`2025-12-${String(d).padStart(2, '0')}`);
-}
+/* ===== iCal via CORS-proxy ===== */
+const ICAL_URL =
+  "https://corsproxy.io/?" +
+  encodeURIComponent("https://www.micazu.nl/ical/40d6160e-b5ab-415c-881a-2c1f9f1d2b7d?useDefaultICallEventEndDate=false");
 
-// Voeg hier je iCal-feed toe
-const ICAL_URL = "https://www.micazu.nl/ical/40d6160e-b5ab-415c-881a-2c1f9f1d2b7d?useDefaultICallEventEndDate=false"; // vervang door jouw echte iCal-link
-
+/* ===== iCal laden: VEVENT-blokken betrouwbaar parsen ===== */
 async function loadICal() {
   try {
     const res = await fetch(ICAL_URL);
-    if (!res.ok) throw new Error("Kan iCal niet laden");
-    const text = await res.text();
+    const ics = await res.text();
 
-    // Parse DTSTART / DTEND
-    const events = [...text.matchAll(/DTSTART(?:;VALUE=DATE)?:(\d{8})[\s\S]*?DTEND(?:;VALUE=DATE)?:(\d{8})/g)];
-    for (const e of events) {
-      const start = parseICalDate(e[1]);
-      const end = parseICalDate(e[2]);
-      const cur = new Date(start);
-      while (cur < end) {
-        const ds = formatDate(cur);
-        if (!blocked.includes(ds)) blocked.push(ds);
+    // Split op VEVENT-blokken
+    const veventRegex = /BEGIN:VEVENT([\s\S]*?)END:VEVENT/g;
+    const blocks = [...ics.matchAll(veventRegex)];
+
+    const ranges = [];
+    for (const b of blocks) {
+      const chunk = b[1];
+
+      // Pak DTSTART / DTEND binnen dit blok (VALUE=DATE en/of DATE-TIME)
+      const dtStartMatch = chunk.match(/DTSTART[^:]*:(\d{8})(?:T\d{6}Z)?/);
+      const dtEndMatch   = chunk.match(/DTEND[^:]*:(\d{8})(?:T\d{6}Z)?/);
+
+      if (!dtStartMatch || !dtEndMatch) continue;
+      const start = parseICalDate(dtStartMatch[1]);
+      const end   = parseICalDate(dtEndMatch[1]);
+
+      // Sla over als end<=start (defensief)
+      if (!(end > start)) continue;
+
+      ranges.push({ start, end });
+    }
+
+    // Sorteer + merge overlappende of aaneengesloten ranges
+    ranges.sort((a,b)=>a.start-b.start);
+    const merged = [];
+    for (const r of ranges) {
+      if (!merged.length) { merged.push({...r}); continue; }
+      const last = merged[merged.length-1];
+
+      // Belangrijk: iCal DTEND is exclusief; twee boekingen "back-to-back"
+      // hebben last.end == r.start. Dat willen we samenvoegen tot één blok.
+      if (r.start <= last.end) {
+        if (r.end > last.end) last.end = r.end;
+      } else {
+        merged.push({...r});
+      }
+    }
+
+    // Zet alle nachten in blockedSet, vertrekdag blijft vrij
+    for (const r of merged) {
+      const endMinusOne = new Date(r.end);
+      endMinusOne.setDate(endMinusOne.getDate() - 1);
+
+      const cur = new Date(r.start);
+      while (cur <= endMinusOne) {
+        blockedSet.add(formatDate(cur));
         cur.setDate(cur.getDate() + 1);
       }
     }
 
-    console.log(`iCal geladen (${blocked.length} dagen geblokkeerd)`);
-    renderMonths(); // opnieuw tekenen zodra data geladen is
+    // Optioneel: log voor snelle controle
+    // console.log("Blokkeringen:", Array.from(blockedSet).slice(0,20), "... totaal:", blockedSet.size);
+
   } catch (err) {
-    console.warn("Kon iCal niet laden:", err.message);
-    renderMonths();
+    console.warn("iCal laden/parsen mislukt:", err.message);
   }
+  renderMonths();
 }
 
-function parseICalDate(str) {
-  return new Date(
-    parseInt(str.substr(0, 4)),
-    parseInt(str.substr(4, 2)) - 1,
-    parseInt(str.substr(6, 2))
-  );
+/* ===== Helpers ===== */
+function parseICalDate(yyyymmdd){
+  return new Date(+yyyymmdd.slice(0,4), +yyyymmdd.slice(4,6)-1, +yyyymmdd.slice(6,8));
 }
-function formatDate(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function formatDate(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function sameDay(a,b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 }
 
-/* ---------- KALENDER RENDERING ---------- */
-let baseMonth = new Date(2025,10,1); // start in november 2025
-let checkIn=null, checkOut=null;
-
-const monthsWrap=document.getElementById('months');
-const monthRange=document.getElementById('monthRange');
-const prevBtn=document.getElementById('prevBtn');
-const nextBtn=document.getElementById('nextBtn');
-const hint=document.getElementById('hint');
-
-prevBtn.onclick=()=>{baseMonth.setMonth(baseMonth.getMonth()-1);renderMonths();};
-nextBtn.onclick=()=>{baseMonth.setMonth(baseMonth.getMonth()+1);renderMonths();};
+/* ===== Rendering ===== */
+const monthsWrap = document.getElementById("months");
+const monthRange = document.getElementById("monthRange");
+document.getElementById("prevBtn").onclick = ()=>{ baseMonth.setMonth(baseMonth.getMonth()-1); renderMonths(); };
+document.getElementById("nextBtn").onclick = ()=>{ baseMonth.setMonth(baseMonth.getMonth()+1); renderMonths(); };
 
 function renderMonths(){
-  monthsWrap.innerHTML='';
-  const m1=new Date(baseMonth.getFullYear(),baseMonth.getMonth(),1);
-  const m2=new Date(baseMonth.getFullYear(),baseMonth.getMonth()+1,1);
-  const names=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-  monthRange.textContent=`${names[m1.getMonth()]} ${m1.getFullYear()} – ${names[m2.getMonth()]} ${m2.getFullYear()}`;
-  [m1,m2].forEach(m=>monthsWrap.appendChild(renderMonth(m)));
+  monthsWrap.innerHTML = "";
+  const m1 = new Date(baseMonth.getFullYear(), baseMonth.getMonth(), 1);
+  const m2 = new Date(baseMonth.getFullYear(), baseMonth.getMonth()+1, 1);
+  const names = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+  monthRange.textContent = `${names[m1.getMonth()]} ${m1.getFullYear()} – ${names[m2.getMonth()]} ${m2.getFullYear()}`;
+  [m1, m2].forEach(m => monthsWrap.appendChild(renderMonth(m)));
   paintRange();
 }
-function renderMonth(first){
-  const year=first.getFullYear(), month=first.getMonth();
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const firstDow=(new Date(year,month,1).getDay()+6)%7;
-  const wrap=document.createElement('div');wrap.className='month';
+
+function renderMonth(firstOfMonth){
+  const y = firstOfMonth.getFullYear(), m = firstOfMonth.getMonth();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const offset = (new Date(y, m, 1).getDay() + 6) % 7; // maandag=0
+
+  const wrap = document.createElement("div");
+  wrap.className = "month";
+
   const names=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-  const title=document.createElement('h4');title.textContent=`${names[month]} ${year}`;wrap.appendChild(title);
-  const g=document.createElement('div');g.className='grid-7';
-  ["ma","di","wo","do","vr","za","zo"].forEach(d=>{const el=document.createElement('div');el.className='dow';el.textContent=d;g.appendChild(el);});
-  for(let i=0;i<firstDow;i++){const e=document.createElement('div');e.className='day empty';g.appendChild(e);}
-  for(let d=1; d<=daysInMonth; d++){
-    const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const el=document.createElement('div');el.className='day';el.textContent=d;
-    if(blocked.includes(ds)) el.classList.add('booked');
-    el.onclick=()=>onPick(ds,el.classList.contains('booked'));
-    g.appendChild(el);
+  const title = document.createElement("h4");
+  title.textContent = `${names[m]} ${y}`;
+  wrap.appendChild(title);
+
+  const grid = document.createElement("div");
+  grid.className = "grid-7";
+  ["ma","di","wo","do","vr","za","zo"].forEach(d=>{
+    const el = document.createElement("div"); el.className="dow"; el.textContent=d; grid.appendChild(el);
+  });
+
+  for(let i=0;i<offset;i++){
+    const e = document.createElement("div"); e.className="day empty"; grid.appendChild(e);
   }
-  wrap.appendChild(g);
+
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement("div");
+    el.className = "day"; el.textContent = d;
+
+    if (blockedSet.has(ds)) el.classList.add("booked");
+    el.onclick = () => onPick(ds, el.classList.contains("booked"));
+    grid.appendChild(el);
+  }
+
+  wrap.appendChild(grid);
   return wrap;
 }
 
-/* ---------- SELECTIE & LOGICA ---------- */
-function onPick(ds,isBlocked){
-  if(isBlocked) return;
-  const d=new Date(ds);
-  if(!checkIn || (checkIn && checkOut)){
-    checkIn=d;checkOut=null;
+/* ===== Selectie & validatie ===== */
+function onPick(ds, isBlocked){
+  if (isBlocked) return;
+  const d = new Date(ds);
+
+  // 1️⃣ Eerste klik of reset
+  if (!checkIn || checkOut) {
+    checkIn = d;
+    checkOut = null;
     paintRange();
-    hint.textContent=`Gekozen aankomst: ${fmt(d)}. Kies vertrekdatum.`;
-  } else if(d>checkIn){
-    const nights=diff(checkIn,d);
-    if(nights<MIN_NIGHTS){alert(`Minimaal ${MIN_NIGHTS} nachten.`);return;}
-    if(validRange(checkIn,d)){
-      checkOut=d;paintRange();updateSummary();
-    } else alert("Periode bevat bezette dagen.");
+    return;
   }
-}
-function paintRange(){
-  document.querySelectorAll('.day').forEach(day=>day.classList.remove('selected','in-range'));
-  document.querySelectorAll('.day').forEach(day=>{
-    if(day.classList.contains('empty')||day.classList.contains('booked')) return;
-    const monthName=day.closest('.month').querySelector('h4').textContent.split(' ');
-    const monthIndex=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"].indexOf(monthName[0]);
-    const year=parseInt(monthName[1]);
-    const dateStr=`${year}-${String(monthIndex+1).padStart(2,'0')}-${String(day.textContent).padStart(2,'0')}`;
-    const dt=new Date(dateStr);
-    if(checkIn && sameDate(dt,checkIn)) day.classList.add('selected');
-    if(checkOut && sameDate(dt,checkOut)) day.classList.add('selected');
-    if(checkIn && checkOut && dt>checkIn && dt<checkOut) day.classList.add('in-range');
-  });
-}
-function validRange(a,b){
-  const cur=new Date(a);
-  while(cur<b){
-    const ds=formatDate(cur);
-    if(blocked.includes(ds)) return false;
-    cur.setDate(cur.getDate()+1);
+
+  // 2️⃣ Als tweede klik na check-in
+  if (d.getTime() === checkIn.getTime()) {
+    // zelfde dag = reset
+    checkIn = null;
+    checkOut = null;
+    paintRange();
+    return;
   }
-  return true;
-}
-function diff(a,b){return Math.round((b-a)/(1000*60*60*24));}
-function sameDate(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
-function fmt(d){return `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;}
-function updateSummary(){
-  if(checkIn && checkOut){
-    const nights=diff(checkIn,checkOut);
-    const base=nights*NIGHT_PRICE;
-    const total=base+CLEANING+TOURIST_TAX;
-    parent.postMessage({type:"updateSummary", nights, total, checkIn:fmt(checkIn), checkOut:fmt(checkOut)}, "*");
+
+  // 3️⃣ Als de tweede klik vóór de eerste is → omdraaien
+  if (d < checkIn) {
+    checkIn = d;
+    checkOut = null;
+    paintRange();
+    return;
+  }
+
+  // 4️⃣ Normale flow: d > checkIn
+  const nights = Math.round((d - checkIn) / (1000*60*60*24));
+  if (nights < MIN_NIGHTS) {
+    alert(`Minimaal ${MIN_NIGHTS} nachten.`);
+    return;
+  }
+
+  if (!rangeHasBlock(checkIn, d)) {
+    checkOut = d;
+    paintRange();
+    updateSummary();
+  } else {
+    alert("Periode bevat geblokkeerde dagen.");
   }
 }
 
-/* Start */
+function rangeHasBlock(a, b){
+  const cur = new Date(a);
+  while (cur < b){
+    if (blockedSet.has(formatDate(cur))) return true;
+    cur.setDate(cur.getDate()+1);
+  }
+  return false;
+}
+
+function paintRange(){
+  document.querySelectorAll(".day").forEach(d=>d.classList.remove("selected","in-range"));
+  document.querySelectorAll(".day").forEach(day=>{
+    if(day.classList.contains("empty")||day.classList.contains("booked")) return;
+    const t = day.closest(".month").querySelector("h4").textContent.split(" ");
+    const mi = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"].indexOf(t[0]);
+    const y  = parseInt(t[1],10);
+    const ds = `${y}-${String(mi+1).padStart(2,'0')}-${String(day.textContent).padStart(2,'0')}`;
+    const dt = new Date(ds);
+
+    if (checkIn && sameDay(dt, checkIn)) day.classList.add("selected");
+    if (checkOut && sameDay(dt, checkOut)) day.classList.add("selected");
+    if (checkIn && checkOut && dt > checkIn && dt < checkOut) day.classList.add("in-range");
+  });
+}
+
+function updateSummary(){
+  if (checkIn && checkOut){
+    const nights = Math.round((checkOut - checkIn) / (1000*60*60*24));
+    const total = nights * NIGHT_PRICE + CLEANING + TOURIST_TAX;
+    const msg = {
+      type:"updateSummary",
+      nights,
+      total,
+      checkIn: checkIn.toLocaleDateString("nl-NL"),
+      checkOut: checkOut.toLocaleDateString("nl-NL")
+    };
+
+    // Stuur naar parent (index.html)
+    parent.postMessage(msg, "*");
+
+    // Stuur rechtstreeks naar summary iframe (als aanwezig)
+    const summaryFrame = parent.document.getElementById("summaryFrame");
+    if (summaryFrame && summaryFrame.contentWindow) {
+      summaryFrame.contentWindow.postMessage(msg, "*");
+    }
+  }
+}
+
+
+/* ===== Start ===== */
 loadICal();
 </script>
 </body>
